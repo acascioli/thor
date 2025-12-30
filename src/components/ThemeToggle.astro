@@ -1,0 +1,76 @@
+<div data-theme-toggle-root>
+  <button
+    type="button"
+    class="inline-flex items-center gap-2 rounded-full border border-borderSubtle bg-bgElevated px-3 py-2 text-sm font-semibold text-fgBase shadow-sm transition hover:border-primary/60 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bgBase dark:border-borderSubtleDark dark:bg-bgElevatedDark dark:text-fgBaseDark dark:hover:border-accentLime/70 dark:hover:text-accentLime dark:focus-visible:ring-accentLime dark:focus-visible:ring-offset-bgBaseDark"
+    aria-label="Toggle dark mode"
+    aria-pressed="false"
+    data-theme-toggle
+  >
+    <span aria-hidden="true" class="text-base dark:hidden">🌙</span>
+    <span aria-hidden="true" class="hidden text-base dark:inline">☀️</span>
+    <span class="sr-only">Toggle dark mode</span>
+  </button>
+
+  <script is:inline>
+    (() => {
+      // Theme toggle: read stored preference, fall back to system, then apply class + meta color.
+      const storageKey = 'theme';
+      const root = document.documentElement;
+
+      const initToggle = () => {
+        document.querySelectorAll('[data-theme-toggle-root]').forEach((host) => {
+          if (!(host instanceof HTMLElement) || host.dataset.themeToggleReady === 'true') return;
+          const button = host.querySelector('[data-theme-toggle]');
+          if (!button) return;
+
+          host.dataset.themeToggleReady = 'true';
+          const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)');
+          const readStored = () => {
+            try { return localStorage.getItem(storageKey); } catch (_) { return null; }
+          };
+          const updateMeta = (mode) => {
+            const meta = document.querySelector('meta[name=\"theme-color\"]');
+            if (!meta) return;
+            const color = mode === 'dark' ? '#050816' : '#f9fafb';
+            meta.setAttribute('content', color);
+          };
+
+          const applyTheme = (mode, persist = false) => {
+            root.classList.toggle('dark', mode === 'dark');
+            root.dataset.theme = mode;
+            root.style.colorScheme = mode;
+            button.setAttribute('aria-pressed', String(mode === 'dark'));
+            updateMeta(mode);
+            if (persist) {
+              try { localStorage.setItem(storageKey, mode); } catch (_) {}
+            }
+          };
+
+          const stored = readStored();
+          const initial = stored || (root.classList.contains('dark') ? 'dark' : (prefersDark?.matches ? 'dark' : 'light'));
+          applyTheme(initial, Boolean(stored));
+
+          button.addEventListener('click', () => {
+            const next = root.classList.contains('dark') ? 'light' : 'dark';
+            applyTheme(next, true);
+          });
+
+          prefersDark?.addEventListener?.('change', (event) => {
+            if (readStored()) return; // respect manual choice
+            applyTheme(event.matches ? 'dark' : 'light', false);
+          });
+        });
+      };
+
+      const runInit = () => requestAnimationFrame(initToggle);
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', runInit, { once: true });
+      } else {
+        runInit();
+      }
+      ['astro:after-swap', 'astro:page-load'].forEach((eventName) => {
+        document.addEventListener(eventName, runInit);
+      });
+    })();
+  </script>
+</div>

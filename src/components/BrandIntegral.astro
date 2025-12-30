@@ -1,0 +1,133 @@
+---
+import logoDark from "../assets/logo.svg";
+import logoLight from "../assets/logo_blue.svg";
+
+interface Props {
+  href?: string;
+}
+
+const { href = '/' } = Astro.props as Props;
+const logoDarkSrc = typeof logoDark === "string" ? logoDark : logoDark.src;
+const logoLightSrc = typeof logoLight === "string" ? logoLight : logoLight.src;
+const currentLocale = (Astro.currentLocale || "en").slice(0, 2);
+
+const ariaLabel =
+  currentLocale === "de"
+    ? "Start – Integral von ale dx ist gleich alex plus c"
+    : currentLocale === "it"
+      ? "Home – integrale di ale dx uguale alex più c"
+      : "Home – integral of ale dx equals alex plus c";
+
+const equalsTextSr =
+  currentLocale === "de"
+    ? "gleich alex plus c"
+    : currentLocale === "it"
+      ? "uguale alex più c"
+      : "equals alex plus c";
+const equalsText = "= alex + c";
+
+const baseClass = [
+  'group relative inline-flex items-center gap-3 text-lg font-semibold tracking-tight',
+  'text-primary transition-colors duration-200 hover:text-primarySoft',
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bgBase',
+  'dark:text-accentLime dark:hover:text-accentLimeSoft dark:focus-visible:ring-accentLime dark:focus-visible:ring-offset-bgBaseDark'
+].join(' ');
+---
+<a
+  href={href}
+  class={baseClass}
+  aria-label={ariaLabel}
+  data-brand-integral
+>
+  <span class="relative inline-flex h-10 w-10 shrink-0 items-center justify-center overflow-visible">
+    <img
+      src={logoLightSrc}
+      alt=""
+      aria-hidden="true"
+      class="absolute left-1/2 top-1/2 h-16 w-16 -translate-x-1/2 -translate-y-1/2 dark:hidden"
+      style="filter: drop-shadow(0 0 10px rgba(1,115,230,0.95)) drop-shadow(0 0 38px rgba(1,115,230,0.75));"
+      loading="eager"
+      decoding="async"
+    />
+    <img
+      src={logoDarkSrc}
+      alt=""
+      aria-hidden="true"
+      class="absolute left-1/2 top-1/2 hidden h-16 w-16 -translate-x-1/2 -translate-y-1/2 dark:block"
+      style="filter: drop-shadow(0 0 12px rgba(164,255,0,0.95)) drop-shadow(0 0 40px rgba(164,255,0,0.8));"
+      loading="eager"
+      decoding="async"
+    />
+  </span>
+  <span class="text-2xl leading-none">∫</span>
+  <span class="leading-none">ale</span>
+  <span class="text-sm leading-none text-fgMuted transition duration-200 group-hover:text-inherit group-focus-visible:text-inherit dark:text-fgMutedDark">dx</span>
+  <span
+    class="relative inline-flex items-baseline gap-1 whitespace-nowrap overflow-hidden pl-0 text-base leading-none text-primary opacity-0 translate-x-1 max-w-0 transition-all duration-500 ease-out group-hover:opacity-100 group-hover:translate-x-0 group-hover:max-w-[140px] group-hover:pl-1 group-focus-visible:opacity-100 group-focus-visible:translate-x-0 group-focus-visible:max-w-[140px] group-focus-visible:pl-1 dark:text-accentLime"
+  >
+    <span aria-hidden="true" data-cipher-target class="flex items-baseline gap-1">{equalsText}</span>
+    <span class="sr-only">{equalsTextSr}</span>
+  </span>
+</a>
+
+<script is:inline>
+  (() => {
+    const finalText = /** @type {string} */ (document.querySelector('[data-brand-integral]')?.querySelector('[data-cipher-target]')?.textContent) || '= alex + c';
+    const scrambleChars = ['∑', '∆', 'λ', '∫', '#', '%', '+', '≈'];
+
+    const initIntegral = () => {
+      document.querySelectorAll('[data-brand-integral]').forEach((host) => {
+        if (!(host instanceof HTMLElement) || host.dataset.cipherReady === 'true') return;
+        const target = host.querySelector('[data-cipher-target]');
+        if (!(target instanceof HTMLElement)) return;
+
+        host.dataset.cipherReady = 'true';
+
+        let rafId = 0;
+        let frame = 0;
+
+        const step = () => {
+          frame += 1;
+          const progress = Math.min(frame / 28, 1);
+          const revealCount = Math.floor(finalText.length * progress);
+          const nextText = finalText
+            .split('')
+            .map((char, index) => (index < revealCount ? char : scrambleChars[Math.floor(Math.random() * scrambleChars.length)]))
+            .join('');
+
+          target.textContent = nextText;
+          if (progress < 1) rafId = requestAnimationFrame(step);
+        };
+
+        const reset = () => {
+          cancelAnimationFrame(rafId);
+          target.textContent = finalText;
+          frame = 0;
+        };
+
+        const start = () => {
+          cancelAnimationFrame(rafId);
+          frame = 0;
+          step();
+        };
+
+        host.addEventListener('mouseenter', start);
+        host.addEventListener('focus', start, true);
+        host.addEventListener('mouseleave', reset);
+        host.addEventListener('blur', reset, true);
+
+        reset();
+      });
+    };
+
+    const runInit = () => requestAnimationFrame(initIntegral);
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', runInit, { once: true });
+    } else {
+      runInit();
+    }
+    ['astro:after-swap', 'astro:page-load'].forEach((eventName) => {
+      document.addEventListener(eventName, runInit);
+    });
+  })();
+</script>

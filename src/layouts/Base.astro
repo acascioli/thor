@@ -1,0 +1,127 @@
+---
+export interface Props {
+  title?: string;
+  description?: string;
+  navLinks?: { href: string; label: string }[];
+  footerLeft?: string;
+  footerRight?: string;
+  footerNote?: string;
+  mainClass?: string;
+  contentWrapperClass?: string;
+  enableTransitions?: boolean;
+}
+
+import "../styles/tailwind.css";
+import "../styles/theme.css";
+import "../styles/prose.css";
+import Navbar from "../components/Navbar.astro";
+import { getAbsoluteLocaleUrl } from "astro:i18n";
+import { ClientRouter } from "astro:transitions";
+
+const {
+  title = "My Site",
+  description,
+  navLinks: navLinksProp,
+  footerLeft = "© 2025 Alessandro Cascioli",
+  footerRight = "P.IVA: 01708920556",
+  footerNote,
+  mainClass = "",
+  contentWrapperClass = "",
+  enableTransitions = false,
+} = Astro.props as Props;
+
+const mainClasses = ["relative z-10 flex-1", mainClass].filter(Boolean).join(" ");
+const contentClasses = ["mx-auto max-w-6xl px-4 sm:px-6 lg:px-8", contentWrapperClass].filter(Boolean).join(" ");
+
+const SUPPORTED: string[] = ["it", "en", "de"];
+const DEFAULT: string = "en";
+const currentLocale = SUPPORTED.includes(Astro.currentLocale ?? "") ? (Astro.currentLocale as string) : DEFAULT;
+
+const navCopy = {
+  en: {  },
+  de: {  },
+  it: {  },
+} as const;
+
+const labels = navCopy[currentLocale as keyof typeof navCopy] ?? navCopy.en;
+const footerCopy = {
+  en: "Hosted in a climate-neutral data center",
+  de: "Gehostet in einem klimaneutralen Rechenzentrum",
+  it: "Ospitato in un data center a impatto climatico neutro",
+} as const;
+const resolvedFooterNote = footerNote ?? (footerCopy[currentLocale as keyof typeof footerCopy] ?? footerCopy.en);
+const navLinks =
+  navLinksProp ??
+  ([
+    { href: "/", label: labels.home },
+  ] satisfies Props["navLinks"]);
+
+const segments = Astro.url.pathname.replace(/^\/+|\/+$/g, "").split("/").filter(Boolean);
+const localizedPath = segments.length && SUPPORTED.includes(segments[0]) ? segments.slice(1) : segments;
+const pathWithoutLocale = localizedPath.join("/");
+
+const canonicalHref = getAbsoluteLocaleUrl(currentLocale, pathWithoutLocale);
+const alternateLinks = SUPPORTED.map((locale) => ({
+  locale,
+  href: getAbsoluteLocaleUrl(locale, pathWithoutLocale),
+}));
+const xDefaultHref = getAbsoluteLocaleUrl(DEFAULT, pathWithoutLocale);
+---
+<!DOCTYPE html>
+<html lang={currentLocale} class="bg-bgBase text-fgBase dark:bg-bgBaseDark dark:text-fgBaseDark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    {description && <meta name="description" content={description} />}
+    <meta name="theme-color" content="#f9fafb" />
+    <link rel="canonical" href={canonicalHref} />
+    {alternateLinks.map(({ locale, href }) => (
+      <link rel="alternate" hreflang={locale} href={href} />
+    ))}
+    <link rel="alternate" hreflang="x-default" href={xDefaultHref} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="shortcut icon" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <script is:inline>
+      (() => {
+        // Early theme application to avoid flashes.
+        const storageKey = 'theme';
+        const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)');
+        let stored = null;
+        try { stored = localStorage.getItem(storageKey); } catch (_) {}
+        const initial = stored || (prefersDark?.matches ? 'dark' : 'light');
+        if (initial === 'dark') document.documentElement.classList.add('dark');
+        document.documentElement.dataset.theme = initial;
+        document.documentElement.style.colorScheme = initial;
+        const meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute('content', initial === 'dark' ? '#050816' : '#f9fafb');
+      })();
+    </script>
+    {enableTransitions && <ClientRouter />}
+  </head>
+
+  <body class="relative m-0 flex min-h-screen flex-col bg-bgBase text-fgBase antialiased transition-colors dark:bg-bgBaseDark dark:text-fgBaseDark">
+    <Navbar navLinks={navLinks} currentLocale={currentLocale} supportedLocales={SUPPORTED} defaultLocale={DEFAULT} />
+
+    <main class={`${mainClasses} py-8 sm:py-10`}>
+      <div class={contentClasses}>
+        <slot />
+      </div>
+    </main>
+
+    <footer class="relative z-10 border-t border-borderSubtle/80 bg-bgElevated/90 text-sm text-fgMuted shadow-inner dark:border-borderSubtleDark/70 dark:bg-bgElevatedDark/80 dark:text-fgMutedDark">
+      <div class="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-4 py-6 text-center sm:flex-row sm:text-left sm:px-6 lg:px-8">
+        <span>{footerLeft}</span>
+        <span>{resolvedFooterNote}</span>
+        <span>{footerRight}</span>
+      </div>
+    </footer>
+
+  </body>
+</html>

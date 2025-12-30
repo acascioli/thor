@@ -1,0 +1,125 @@
+---
+import BrandIntegral from "./BrandIntegral.astro";
+import ThemeToggle from "./ThemeToggle.astro";
+import { getRelativeLocaleUrl } from "astro:i18n";
+
+interface NavLink {
+  href: string;
+  label: string;
+}
+
+interface Props {
+  navLinks?: NavLink[];
+  currentLocale?: string;
+  supportedLocales?: string[];
+  defaultLocale?: string;
+}
+
+const {
+  navLinks = [],
+  currentLocale = "en",
+  supportedLocales = ["it", "en", "de"],
+  defaultLocale = "en",
+} = Astro.props as Props;
+
+const cleanedLocale = supportedLocales.includes(currentLocale) ? currentLocale : defaultLocale;
+const segments = Astro.url.pathname.replace(/^\/+|\/+$/g, "").split("/").filter(Boolean);
+const localizedPath = segments.length && supportedLocales.includes(segments[0]) ? segments.slice(1) : segments;
+const pathWithoutLocale = localizedPath.join("/");
+
+const localeOptions = supportedLocales.map((locale) => ({
+  locale,
+  href: getRelativeLocaleUrl(locale, pathWithoutLocale),
+  label:
+    locale === "en" ? "English" :
+    locale === "de" ? "Deutsch" :
+    locale === "it" ? "Italiano" :
+    locale.toUpperCase(),
+}));
+
+const localeLabel = cleanedLocale === "de" ? "Sprache" : cleanedLocale === "it" ? "Lingua" : "Language";
+
+function withLocale(href?: string) {
+  if (!href) return '/';
+  if (/^[a-z]+:\/\//i.test(href) || href.startsWith('//')) return href;
+  if (href.startsWith('#')) return href;
+  if (!href.startsWith('/')) return href;
+  if (cleanedLocale === defaultLocale) return href;
+  return `/${cleanedLocale}${href}`.replace(/\/{2,}/g, '/');
+}
+
+function isActive(href?: string) {
+  if (!href) return false;
+  const resolved = withLocale(href);
+
+  const clean = (value: string) => {
+    if (!value) return '/';
+    let next = value;
+    if (!next.startsWith('/')) next = '/' + next;
+    next = next.replace(/\/+$/, '');
+    return next === '' ? '/' : next;
+  };
+
+  const current = clean(Astro.url.pathname);
+  const target = clean(resolved);
+  const isLocaleBase = target === '/' || supportedLocales.some((l) => target === `/${l}`);
+  if (isLocaleBase) return current === target;
+  return current === target || current.startsWith(`${target}/`);
+}
+
+const homeHref = withLocale('/');
+const links = navLinks.map((link) => ({ ...link, href: withLocale(link.href), active: isActive(link.href) }));
+---
+<nav class="sticky top-0 z-50 border-b border-borderSubtle/80 bg-bgBase/80 backdrop-blur-xl transition-colors dark:border-borderSubtleDark/70 dark:bg-bgBaseDark/80">
+  <div class="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3 sm:px-6 lg:px-8">
+    <BrandIntegral href={homeHref} />
+
+    <div class="flex flex-1 flex-wrap items-center gap-1 sm:gap-2">
+      {links.length > 1 && links.map((link) => (
+        <a
+          href={link.href}
+          aria-current={link.active ? 'page' : undefined}
+          class={`inline-flex items-center rounded-md px-3 py-2 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bgBase dark:focus-visible:ring-accentLime dark:focus-visible:ring-offset-bgBaseDark
+            ${link.active
+              ? 'bg-primary/10 text-primary dark:bg-accentLime/15 dark:text-accentLime'
+              : 'text-fgMuted hover:text-primary hover:bg-primary/5 dark:text-fgMutedDark dark:hover:text-accentLime dark:hover:bg-accentLime/10'}
+          `}
+        >
+          {link.label}
+        </a>
+      ))}
+    </div>
+
+    <div class="flex items-center gap-2">
+      <label class="sr-only" for="locale-switch">{localeLabel}</label>
+      <select
+        id="locale-switch"
+        data-locale-switch
+        class="rounded-md border border-borderSubtle bg-bgElevated px-2 py-2 text-sm font-semibold text-fgBase shadow-sm transition hover:border-primary focus:outline-none focus:ring-2 focus:ring-primary dark:border-borderSubtleDark dark:bg-bgElevatedDark dark:text-fgBaseDark dark:hover:border-accentLime dark:focus:ring-accentLime"
+      >
+        {localeOptions.map(({ locale, href, label }) => (
+          <option value={href} selected={locale === cleanedLocale}>
+            {label}
+          </option>
+        ))}
+      </select>
+
+      <ThemeToggle />
+    </div>
+  </div>
+
+  <script is:inline>
+    (() => {
+      const select = document.getElementById('locale-switch');
+      if (!select) return;
+      select.addEventListener('change', (event) => {
+        const value = event.target.value;
+        if (!value) return;
+        const next = new URL(value, window.location.origin);
+        next.search = window.location.search;
+        next.hash = window.location.hash;
+        window.location.assign(next.toString());
+      });
+    })();
+  </script>
+</nav>

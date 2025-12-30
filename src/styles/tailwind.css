@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-bgBase: #f9fafb;
+  --color-bgElevated: #ffffff;
+  --color-bgMuted: #eef2f7;
+  --color-bgBaseDark: #050816;
+  --color-bgElevatedDark: #0b1021;
+  --color-bgMutedDark: #0f1729;
+  --color-fgBase: #111827;
+  --color-fgMuted: #4b5563;
+  --color-fgBaseDark: #e5e7eb;
+  --color-fgMutedDark: #9ca3af;
+  --color-borderSubtle: #e5e7eb;
+  --color-borderSubtleDark: #1f2937;
+  --color-primary: #0173e6;
+  --color-primarySoft: #2b85ee;
+  --color-accentLime: #a4ff00;
+  --color-accentLimeSoft: #c9ff4d;
+  --shadow-card: 0 10px 30px rgba(15, 23, 42, 0.08);
+  --shadow-cardStrong: 0 20px 50px rgba(0, 0, 0, 0.35);
+  --font-heading: "Space Grotesk", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-body: "Space Grotesk", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
