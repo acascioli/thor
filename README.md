@@ -1,46 +1,40 @@
-# Astro Starter Kit: Basics
+# Thor
+
+Thor is an Astro + Tailwind single-page report flow that lets users share an
+optional location, phone number, and message. Submissions hit `/api/report`,
+which can forward the report to Discord when configured.
+
+## Getting started
 
 ```sh
-pnpm create astro@latest -- --template basics
+pnpm install
+pnpm dev
 ```
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+Visit `http://localhost:4321`.
 
-## 🚀 Project Structure
+## Environment variables
 
-Inside of your Astro project, you'll see the following folders and files:
+Create a local `.env` (see `.env.example`) to enable Discord delivery:
 
-```text
-/
-├── public/
-│   └── favicon.svg
-├── src
-│   ├── assets
-│   │   └── astro.svg
-│   ├── components
-│   │   └── Welcome.astro
-│   ├── layouts
-│   │   └── Layout.astro
-│   └── pages
-│       └── index.astro
-└── package.json
+```env
+DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
 ```
 
-To learn more about the folder structure of an Astro project, refer to [our guide on project structure](https://docs.astro.build/en/basics/project-structure/).
+If `DISCORD_WEBHOOK_URL` is unset, the API route still responds but skips the
+Discord call.
 
-## 🧞 Commands
+## Commands
 
-All commands are run from the root of the project, from a terminal:
+| Command         | Action                                       |
+| :-------------- | :------------------------------------------- |
+| `pnpm dev`      | Start the local dev server                   |
+| `pnpm build`    | Build the production site to `./dist/`       |
+| `pnpm preview`  | Preview the production build                 |
+| `pnpm astro ...`| Run Astro CLI commands                       |
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `pnpm install`             | Installs dependencies                            |
-| `pnpm dev`             | Starts local dev server at `localhost:4321`      |
-| `pnpm build`           | Build your production site to `./dist/`          |
-| `pnpm preview`         | Preview your build locally, before deploying     |
-| `pnpm astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `pnpm astro -- --help` | Get help using the Astro CLI                     |
+## Public repo safety
 
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+- Secrets are read from `.env`, which is gitignored; never commit real values.
+- Rotate any Discord webhook that was ever exposed in a repo or chat.
+- Share `.env.example` instead of real credentials.
